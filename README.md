@@ -41,7 +41,7 @@ Algorithms that randomly sample a population with no replacements include:
 
 * Reservoir sampling
 	* A couple of versions are shown on [wikipedia](https://en.wikipedia.org/wiki/Reservoir_sampling)
-    * TODO. Reference version implemented in this repo
+    * My [simple implementation](src/fortran/reservoir_sampling.f90)
 
 * Skip and Gap Sampling (Vitter's Algorithm)
 	* Can be more efficient than standard Reservoir Sampling, especially for large streams
@@ -51,9 +51,10 @@ Algorithms that randomly sample a population with no replacements include:
 	* [Blog post](http://erikerlandson.github.io/blog/2014/09/11/faster-random-samples-with-gap-sampling/) on gap sampling
 		* Quite short
 		* Touches on Poisson distribution, which is also utilised by hidden shuffle - worth a read, but the code is Java
-	* [Hidden Shuffle](http://wrap.warwick.ac.uk/150064)  This gives a python implementation, and claims it's more efficient than the above methods
-		* My [python implementation](src/python/hidden_shuffle.py), transcribed from the paper
-        * My [fortran implementation](src/fortran/hidden_shuffle.f90)
+
+* [Hidden Shuffle](http://wrap.warwick.ac.uk/150064)  This gives a python implementation, and claims it's more efficient than the above methods
+  * My [python implementation](src/python/hidden_shuffle.py), transcribed from the paper
+  * My [fortran implementation](src/fortran/hidden_shuffle.f90)
 
 * Hash-Based Sampling
 
