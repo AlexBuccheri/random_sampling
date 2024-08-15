@@ -4,7 +4,7 @@
 !! gfortran src/xorshifts.f90 src/test.f90 -o test_random
 program test_rand
   use iso_fortran_env
-  use xorshifts
+  use integer_mapping_m
   implicit none
 
   integer(int32) :: n_random, i, seed

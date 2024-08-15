@@ -97,6 +97,7 @@ contains
 
     end function log_b
 
+
     !> Get m, N, and optionally seed
     subroutine parse_cli_args(m, N, seed)
 
