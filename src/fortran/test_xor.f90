@@ -1,4 +1,7 @@
-! gfortran src/xorshifts.f90 src/test.f90 -o test_random
+!> Note, this tests the mapping from [0, period) to [a, b), rather than
+!! XOR specifically.
+!!
+!! gfortran src/xorshifts.f90 src/test.f90 -o test_random
 program test_rand
   use iso_fortran_env
   use xorshifts

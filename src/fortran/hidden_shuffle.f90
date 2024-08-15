@@ -99,10 +99,16 @@ contains
 
 end module hidden_shuffle_m
 
+
 program test
+    use iso_fortran_env
     use hidden_shuffle_m
+    implicit none
+
     integer :: i, m
     integer, allocatable :: result(:)
+    real(real64) :: start, finish
+
     ! To fix the seed
     !integer :: min_seed_size = 10
     !call random_seed(put=min_seed_size)
@@ -110,7 +116,11 @@ program test
 
     m = 100
     allocate(result(m))
+    call cpu_time(start)
     call hidden_shuffle(m, 10000, result)
+    call cpu_time(finish)
+
+    write(*, *) 'Time (s): ', finish - start
 
     ! Transform to limit [i, j) by setting N = j - i
     ! For [1, np], this means passing N = np
