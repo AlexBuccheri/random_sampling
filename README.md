@@ -26,12 +26,12 @@ with the fantastic [gfort2py](https://github.com/rjfarmer/gfort2py).
 
 Test:
 - [ ] My choice of random seed precision (`uint`)
-- [ ] Fisher-Yates shuffle 	
 - [ ] Hidde shuffle
+   * Contains bug/s
 - [ ] Time all algorithms tested in the [notebook](jupyter/sampling_without_replacement.ipynb)
 
 Implement
-- [ ]Weighted version of [reservoir sampling](https://en.wikipedia.org/wiki/Reservoir_sampling#Weighted_random_sampling)
+- [ ] Weighted version of [reservoir sampling](https://en.wikipedia.org/wiki/Reservoir_sampling#Weighted_random_sampling)
   * Ideally where the indices and weights are evaluated on-the-fly
   * Also see the paper [Weighted random sampling with a reservoir](https://doi.org/10.1016/j.ipl.2005.11.003)
 
