@@ -17,9 +17,9 @@ contains
         integer, allocatable :: indices(:), seed(:)
         integer :: i, j, temp, seed_size, date_time(8), seed_value
 
-        call random_seed(size = seed_size)
-        allocate(seed(seed_size))
-        call random_seed(get=seed)
+!        call random_seed(size = seed_size)
+!        allocate(seed(seed_size))
+!        call random_seed(get=seed)
 
         call date_and_time(values=date_time)
         seed_value = date_time(6) + date_time(7) * 1000000
@@ -29,16 +29,8 @@ contains
             indices(i) = i
         end do
 
-        ! TODO(Alex) All mappings return j values <= 500... not sure why
-        ! values > 500 are not being produced...
-        ! Does not appear to be a seed problem either
-!        do i = 1, n
-!            j = bounded_rand_simple(n, seed_value)
-!            write(*, *) j
-!        end do
-
         do i = 1, m
-            call random_int32(i, n, seed(1), j)
+            j = random_integer_int32(i, n, seed_value)
             ! Perform the swap
             temp = indices(i)
             indices(i) = indices(j)
@@ -66,9 +58,9 @@ program test_fisher_yates
     allocate(values(m))
     call fisher_yates_shuffle(m, n, values)
 
-!    do i = 1, m
-!        write(*, *) values(i)
-!    end do
+    do i = 1, m
+        write(*, *) values(i)
+    end do
 
 
 end program test_fisher_yates

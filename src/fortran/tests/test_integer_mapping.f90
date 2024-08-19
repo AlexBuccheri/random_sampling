@@ -1,8 +1,4 @@
-!> Note, this tests the mapping from [0, period) to [a, b), rather than
-!! XOR specifically.
-!!
-!! gfortran src/xorshifts.f90 src/test.f90 -o test_random
-program test_rand
+program test_integer_mapping
   use iso_fortran_env
   use integer_mapping_m
   implicit none
@@ -12,7 +8,8 @@ program test_rand
   real(real64)   :: r_min, r_max, r_rand
   character(len=6) :: test
 
-  seed = 123_int32
+  ! Note, might not be the best way to set the seed
+  CALL SYSTEM_CLOCK(COUNT=seed)
 
   ! Read settings
   open(unit=101, file='settings')
@@ -24,7 +21,7 @@ program test_rand
       close(101)
 
       do i = 1, n_random
-         call random_real64(r_min, r_max, seed, r_rand)
+         !r_rand = random_number_real64(r_min, r_max, seed)
          write(*, *) i, r_rand
       enddo
 
@@ -33,7 +30,7 @@ program test_rand
       close(101)
 
       do i = 1, n_random
-         call random_int32(i_min, i_max, seed, i_rand)
+         i_rand = random_integer_int32(i_min, i_max, seed)
          write(*, *) i, i_rand
       enddo
 
@@ -41,4 +38,4 @@ program test_rand
       error stop 101
   end if
 
-end program test_rand
+end program test_integer_mapping

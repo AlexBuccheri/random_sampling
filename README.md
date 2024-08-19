@@ -24,8 +24,38 @@ Some analysis is performed in the [jupyter] folder.
 
 ## PRNGs
 
-Implemented [XOR](src/fortran/xorshifts.f90), which is straightforward and has a large period of 
-over a million. Also showed that mapping $[0, P)$ to $[a, b)$ is fine when the values are real
+Implemented [XOR](src/fortran/xorshifts.f90), which is straightforward and has a large period of over a million. 
+However, one has to be careful with the handling of signed  vs unsigned integers when transcribing
+from C.
+
+An unsigned int in C can hold numbers $[0, 2^{32} - 1]$, however fortran does not support this data type. 
+Instead, signed `int32` has the range $[-2^{31}, 2^{31} - 1]$. I use a bit mask to remap negative values:
+
+```fortran
+! A mask that has all the bits set to 1 except the most significant bit 
+! i.e. the sign bit in a 32-bit signed integer
+iand(x, Z'7FFFFFFF')
+```
+
+This leaves $[0, 2^{31}-1]$ unchanged. However, for negative values, $x$ is represented using two's complement notation. 
+When you apply `iand(x, Z'7FFFFFFF')`, you are effectively masking out the sign bit. This operation converts a negative 
+number into its unsigned equivalent by removing the sign bit and keeping only the lower 31 bits.
+
+```fortran
+integer(int32) :: x
+x = -12345678_int32  ! x = -12345678 (in two's complement)
+x = iand(x, Z'7FFFFFFF')  ! Masking the sign bit
+! x becomes 2015137970 (the unsigned equivalent of -12345678)
+```
+
+There are smarter things one can do. See this [Github reference](https://github.com/Jonas-Finkler/fortran-xorshift-64-star/blob/main/src/random.f90)
+by Jonas Finker, or [MR 2528](https://gitlab.com/octopus-code/octopus/-/merge_requests/2528/) for Octopus, however the 
+above is currently sufficient for my needs.
+
+
+## Mapping integers to a smaller range
+
+Also showed that mapping $[0, P)$ to $[a, b)$ is fine when the values are real
 but mapping to a smaller range of integers will inevitably result in duplication of numbers,
 even when uniformly sampling.
 
@@ -65,3 +95,40 @@ Algorithms that randomly sample a population with no replacements include:
 Some overviews on the problem, and related algorithms:
  * Looks like a good, recent [paper](https://arxiv.org/pdf/2104.05091) "Simple, Optimal Algorithms for Random Sampling Without Replacement" giving an overview of the methods listed here
  * For way more detail and code examples, see this [gist](https://peteroupc.github.io/randomfunc.html)
+
+Fortran implementation references:
+* [Suite of old apps](https://people.math.sc.edu/Burkardt/f_src/rnglib/rnglib.html)
+* [XOR Github reference](https://github.com/Jonas-Finkler/fortran-xorshift-64-star/blob/main/src/random.f90) 
+* [MersenneTwister-Lab in C](https://github.com/MersenneTwister-Lab/XSadd)
+
+
+Try using automated wrapping
+
+I was finally able to get `f2py` compile:
+
+```fortran
+f2py --f90flags="-ffree-form -std=f2008" -c xorshifts.f90 integer_mapping.f90 -m frandom
+```
+
+f2py --f90flags="-ffree-form -std=f2008" -c src/fortran/xorshifts.f90 src/fortran/integer_mapping.f90 -m frandom
+
+
+No idea how to pick up the `iso_fortran_env`, so I explicitly defined them in the lowest module.
+Note, compilation of objects must be in order, from left to right.
+
+`pip install f90wrap`
+
+The example makes no sense. `f2py` still needs the original fortran modules, like so:
+
+```shell
+f90wrap -m frandom src/fortran/xorshifts.f90 src/fortran/integer_mapping.f90
+f2py --f90flags="-ffree-form -std=f2008" -c src/fortran/xorshifts.f90 src/fortran/integer_mapping.f90 f90wrap_xorshifts.f90 f90wrap_integer_mapping.f90 -m frandom
+```
+
+https://stackoverflow.com/questions/12523524/f2py-specifying-real-precision-in-fortran-when-interfacing-with-python
+
+Additionally, `f90wrap` has not picked up the type of any of my declarations.
+It also infers dumb shit, like ` use xorshifts, only: xorshifts_int32 => int32`
+
+
+python3 -m fmodpy src/fortran/xorshifts.f90 src/fortran/integer_mapping.f90 
