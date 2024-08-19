@@ -5,8 +5,8 @@ module reservoir_sampling_m
    implicit none
    private
    public ::  reservoir_sampling, &
-              reservoir_sampling_algorithml
-
+              reservoir_sampling_algorithml, &
+              reservoir_sampling_algorithml_with_weight
 contains
 
    !> @brief Simple reservoir sampling using algorithm R.
@@ -89,6 +89,51 @@ contains
       end do
 
    end subroutine reservoir_sampling_algorithml
+
+   ! Erroneous. Do not use
+   subroutine reservoir_sampling_algorithml_with_weight(m, n, seed, weight, threshold, reservoir)
+        integer, intent(in   ) :: m                !< Number of samples
+        integer, intent(in   ) :: n                !< Range of random numbers
+        integer, intent(inout) :: seed(:)          !< RNG seed, which propagates as the random number
+        real(real64), intent(in) :: weight(:)      !< Weights for points [1, m]
+        real(real64), intent(in) :: threshold      !< Threshold for weight comparison
+        integer, intent(out  ) :: reservoir(:)     !< Sampled random numbers
+
+        integer :: i, j, cnt
+        real(real64) :: w, r
+
+        call random_seed(put=seed)
+
+        ! Initialize the reservoir with random unique values with finite weight
+        ! But this can pull duplicates in
+        cnt = 0
+        do while(cnt < m)
+            i = random_integer_int32(1, n, seed(1))
+            if (weight(i) > threshold) then
+                cnt = cnt + 1
+                reservoir(cnt) = i
+            end if
+        end do
+
+        call random_number_avoid_zero(r)
+        w = exp(log(r) / real(m, real64))
+
+        call random_number_avoid_zero(r)
+        i = m + floor(log(r) / log(1._real64 - w), int32) + 1
+
+        do while (i <= n)
+            ! Only swap if weight is greater than threshold
+            if (weight(i) > threshold) then
+                j = random_integer_int32(1, m, seed(1))
+                reservoir(j) = i
+            end if
+            call random_number_avoid_zero(r)
+            w = w * exp(log(r) / real(m, real64))
+            call random_number_avoid_zero(r)
+            i = i + floor(log(r) / log(1._real64 - w), int32) + 1
+        end do
+
+    end subroutine reservoir_sampling_algorithml_with_weight
 
 
     !> Get m, N, and optionally seed
