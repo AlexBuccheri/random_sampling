@@ -2,6 +2,8 @@ module fisher_yates_m
     use iso_fortran_env
     use integer_mapping_m
     implicit none
+    private
+    public :: fisher_yates_shuffle
 
 contains
 
@@ -44,23 +46,3 @@ contains
     end subroutine fisher_yates_shuffle
 
 end module fisher_yates_m
-
-
-program test_fisher_yates
-    use fisher_yates_m
-    implicit none
-
-    integer, allocatable :: values(:)
-    integer :: m, n, i
-
-    m = 10
-    n = 1000
-    allocate(values(m))
-    call fisher_yates_shuffle(m, n, values)
-
-    do i = 1, m
-        write(*, *) values(i)
-    end do
-
-
-end program test_fisher_yates

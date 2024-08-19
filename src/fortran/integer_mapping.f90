@@ -3,13 +3,13 @@ module integer_mapping_m
    use xorshifts
    implicit none
 
-contains
+   private
+   public :: random_integer_int32, &
+           random_number_real64, &
+           bounded_rand_simple, &    ! Not tested
+           bounded_rand              ! Not tested
 
-   ! TODO(Alex)
-   ! Passing seed as an arg then mutating it as the random value is based on Octopus,
-   ! and is a shit design - need to change this
-   ! TODO(Alex)
-   ! Consider if this is biased. Pretty sure it is
+contains
 
    !> @brief Generate a random int32 in the range \f$ [x_{min}, x_{max}] \f$.
    !!
@@ -125,6 +125,5 @@ contains
       ! Return the upper 31 bits of m
       bounded_rand = ishft(m, -31)
    end function bounded_rand
-
 
 end module integer_mapping_m

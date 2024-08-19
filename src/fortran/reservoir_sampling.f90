@@ -1,17 +1,18 @@
-! Transcribed from https://gist.github.com/Pseudomanifold/1ed2b3b5b0a1389bdad97b2fdf5af47e
-! Not Knuth's Algorithm S
-
 module reservoir_sampling_m
    use iso_fortran_env
    use xorshifts
    use integer_mapping_m
    implicit none
+   private
+   public ::  reservoir_sampling, &
+              reservoir_sampling_algorithml
 
 contains
 
    !> @brief Simple reservoir sampling using algorithm R.
    !!
    !! Return a sample of m numbers randomly selectly from [1, n], without replacement.
+   !! Transcribed from https://gist.github.com/Pseudomanifold/1ed2b3b5b0a1389bdad97b2fdf5af47e
    subroutine reservoir_sampling(m, n, selected, seed)
       integer, intent(in ) :: m               !< Number of samples
       integer, intent(in ) :: n               !< Range of random numbers
@@ -39,6 +40,7 @@ contains
 
    end subroutine reservoir_sampling
 
+
    !> @brief Wrapper around Fortran''s intrinsic PRNG, to avoid
    !! zero, such that it returns (0, 1)
    subroutine random_number_avoid_zero(r)
@@ -50,6 +52,7 @@ contains
       end do
 
    end subroutine random_number_avoid_zero
+
 
    !>  Reservoir sampling using algorithm L
    !!
@@ -86,7 +89,6 @@ contains
       end do
 
    end subroutine reservoir_sampling_algorithml
-
 
 
     !> Get m, N, and optionally seed

@@ -13,7 +13,6 @@ module xorshifts
 
 contains
 
-  ! TODO(Alex) Check that using iand(x, Z'7FFFFFFF') keeps the sampling unbiased.
   !> @brief Random integer generation in the range [0, 2^31 - 1], using xorshift.
   !!
   !! Algorithm "xor" from p. 4 of Marsaglia, "Xorshift RNGs"
@@ -33,7 +32,6 @@ contains
     x = iand(x, Z'7FFFFFFF')
 
   end subroutine xorshift_rnd_32
-
 
   !> @brief Random 64-bit integer generation in the range [0, 2^63 - 1], using xorshift.
   subroutine xorshift_rnd_64(x)

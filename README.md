@@ -7,19 +7,33 @@ cmake -S . -B cmake-build
 cmake --build cmake-build
 ```
 
-Some analysis is performed in the [jupyter] folder.
-
+Some analysis is performed in the [jupyter] folder. This is done by automatically wrapping the fortran shared library
+with the fantastic [gfort2py](https://github.com/rjfarmer/gfort2py).
 
 ## TODOs
 
-* Move reservoir sampling code from desktop to here
-* Move wrapped GSL examples? here
-* Test reservoir sampling 
-  * Distribution of numbers
-  * speed
-* Test hidden shuffle
-  * Distribution of numbers
-  * speed
+**Sorting**
+
+- [ ] Migrate wrapped GSL C calling example here
+- [ ] Add a pytoml, such that one can straightforwardly install the python dependencies
+
+**Mapping a random number to an interval**
+
+- [ ] Test Lemire's algorithm in the [integer mapping module](src/fortran/integer_mapping.f90)
+  * Note, there _could_ be issues arising from transcribing from C to fortran
+
+**Sampling without replacement**
+
+Test:
+- [ ] My choice of random seed precision (`uint`)
+- [ ] Fisher-Yates shuffle 	
+- [ ] Hidde shuffle
+- [ ] Time all algorithms tested in the [notebook](jupyter/sampling_without_replacement.ipynb)
+
+Implement
+- [ ]Weighted version of [reservoir sampling](https://en.wikipedia.org/wiki/Reservoir_sampling#Weighted_random_sampling)
+  * Ideally where the indices and weights are evaluated on-the-fly
+  * Also see the paper [Weighted random sampling with a reservoir](https://doi.org/10.1016/j.ipl.2005.11.003)
 
 
 ## PRNGs
@@ -61,7 +75,7 @@ even when uniformly sampling.
 
 See:
 * [Lemire's mapping](src/cpp/lemire_mapping.cpp)
-* Mapping in the [XOR](src/fortran/xorshifts.f90) module
+* Mapping in the [XOR](src/fortran/integer_mapping.f90) module
 
 
 ## Random Sampling a Population with no Replacements
@@ -71,7 +85,7 @@ Algorithms that randomly sample a population with no replacements include:
 
 * Reservoir sampling
 	* A couple of versions are shown on [wikipedia](https://en.wikipedia.org/wiki/Reservoir_sampling)
-    * My [simple implementation](src/fortran/reservoir_sampling.f90)
+    * My [implementations](src/fortran/reservoir_sampling.f90)
 
 * Skip and Gap Sampling (Vitter's Algorithm)
 	* Can be more efficient than standard Reservoir Sampling, especially for large streams
@@ -100,35 +114,3 @@ Fortran implementation references:
 * [Suite of old apps](https://people.math.sc.edu/Burkardt/f_src/rnglib/rnglib.html)
 * [XOR Github reference](https://github.com/Jonas-Finkler/fortran-xorshift-64-star/blob/main/src/random.f90) 
 * [MersenneTwister-Lab in C](https://github.com/MersenneTwister-Lab/XSadd)
-
-
-Try using automated wrapping
-
-I was finally able to get `f2py` compile:
-
-```fortran
-f2py --f90flags="-ffree-form -std=f2008" -c xorshifts.f90 integer_mapping.f90 -m frandom
-```
-
-f2py --f90flags="-ffree-form -std=f2008" -c src/fortran/xorshifts.f90 src/fortran/integer_mapping.f90 -m frandom
-
-
-No idea how to pick up the `iso_fortran_env`, so I explicitly defined them in the lowest module.
-Note, compilation of objects must be in order, from left to right.
-
-`pip install f90wrap`
-
-The example makes no sense. `f2py` still needs the original fortran modules, like so:
-
-```shell
-f90wrap -m frandom src/fortran/xorshifts.f90 src/fortran/integer_mapping.f90
-f2py --f90flags="-ffree-form -std=f2008" -c src/fortran/xorshifts.f90 src/fortran/integer_mapping.f90 f90wrap_xorshifts.f90 f90wrap_integer_mapping.f90 -m frandom
-```
-
-https://stackoverflow.com/questions/12523524/f2py-specifying-real-precision-in-fortran-when-interfacing-with-python
-
-Additionally, `f90wrap` has not picked up the type of any of my declarations.
-It also infers dumb shit, like ` use xorshifts, only: xorshifts_int32 => int32`
-
-
-python3 -m fmodpy src/fortran/xorshifts.f90 src/fortran/integer_mapping.f90 

@@ -8,7 +8,7 @@ module hidden_shuffle_m
     use iso_fortran_env
     implicit none
     private
-    public :: hidden_shuffle, parse_cli_args
+    public :: hidden_shuffle
 
 contains
 
@@ -97,68 +97,4 @@ contains
 
     end function log_b
 
-
-    !> Get m, N, and optionally seed
-    subroutine parse_cli_args(m, N, seed)
-
-        integer, intent(out) :: N, m
-        integer, allocatable, intent(out) :: seed(:)
-
-        integer :: nargs, seed_size, seed_value
-        character(len=32) :: m_str, N_str, seed_str
-
-        nargs = command_argument_count()
-
-        if (nargs >= 2) then
-          call get_command_argument(1, m_str)
-          call get_command_argument(2, N_str)
-          read(m_str, *) m
-          read(N_str, *) N
-        end if
-
-        if (nargs == 3) then
-             call get_command_argument(3, seed_str)
-             call random_seed(size=seed_size)
-             allocate(seed(seed_size))
-             read(seed_str, *) seed_value
-             seed = seed_value
-        end if
-
-    end subroutine parse_cli_args
-
-
 end module hidden_shuffle_m
-
-
-program test
-    use iso_fortran_env
-    use hidden_shuffle_m
-    implicit none
-
-    integer :: i, m, N
-    integer, allocatable :: result(:), seed(:)
-    real(real64) :: start, finish
-
-    ! Set parameters. seed currently ignored
-    m = 100
-    N = 1000
-    if (command_argument_count() > 0) call parse_cli_args(m, N, seed)
-
-    allocate(result(m))
-    call cpu_time(start)
-    call hidden_shuffle(m, N, result)
-    call cpu_time(finish)
-
-    open(unit=101, file='hs_timing.dat')
-    write(101, *)  finish - start
-    close(101)
-
-    ! Transform to limit [i, j) by setting N = j - i
-    ! For [1, np], this means passing N = np
-    ! hen adding i = 1 to the return values
-    do i = 1, m
-        !write(*, *) result(i) + 1
-        write(*, *) result(i)
-    end do
-
-end program test
