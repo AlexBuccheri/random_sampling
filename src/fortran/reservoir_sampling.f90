@@ -96,18 +96,17 @@ contains
    subroutine reservoir_sampling_aexpj(weight, reservoir, seed_value)
       real(real64),   intent(in )           :: weight(:)    !< Weights for the population
       real(real64),   intent(out)           :: reservoir(:) !< m randomly-sampled values from the population
-      !real(real64),   intent(in ), optional :: epsilon      !< Finite value to ensure all weights are > 0
       integer(int32), intent(in ), optional :: seed_value   !< Initial seed value for PRNG
 
       integer(int32) :: m                  !< Sample (reservoir) size
       integer(int32) :: n                  !< Population size
-      real(real64)   :: u_i, u_i2          !< Uniformly-distrubuted random numbers
+      real(real64)   :: u_i, u_i2          !< Uniformly-distributed random numbers
       real(real64)   :: Xw                 !< Random variable
       real(real64), allocatable :: key(:)  !< Key for each reservoir value
 
       integer(int32)              :: min_key_index, i, seed_size
       integer(int32), allocatable :: seed(:)
-      real(real64)                :: eps, thres_w
+      real(real64)                :: thres_w
 
       ! Random number range must be (0, 1), as log(0) would result in a key of -inf, and log(1) = 0
       ! Alternatively one could sample with intrinsic random_number and retry if it returns 0, however
@@ -118,15 +117,8 @@ contains
       m = size(reservoir)
       n = size(weight)
       ! assert(m >= n)
+      ! assert(all(weight>1.))
 
-      eps = 0._real64
-
-!      if (present(epsilon)) then
-!         eps = epsilon
-!      else
-!         eps = 0._real64
-!      endif
-!
       ! Need a random integer seed to initialise the custom RNG
       if (present(seed_value)) then
           allocate(seed(1), source=seed_value)
@@ -144,7 +136,7 @@ contains
       do i = 1, m
          reservoir(i) = i
          u_i = random_number_real64(a, b, seed(1))
-         key(i) = u_i ** (1._real64 / (weight(i) + eps))
+         key(i) = u_i ** (1._real64 / weight(i))
          if (key(i) < key(min_key_index)) min_key_index = i
       enddo
 
@@ -160,8 +152,7 @@ contains
             thres_w = key(min_key_index)**weight(i)
             ! U__{i2} \in (t_w, 1)
             u_i2 = random_number_real64(thres_w + a, b, seed(1))
-            key(i) = u_i2 ** (1._real64 / (weight(i) + eps))
-            ! Question of whether I should do this before or after updating key(i)
+            key(min_key_index) = u_i2 ** (1._real64 / weight(i))
             min_key_index = find_min_key_index(key)
             u_i = random_number_real64(a, b, seed(1))
             Xw = log(u_i) / log(key(min_key_index))
