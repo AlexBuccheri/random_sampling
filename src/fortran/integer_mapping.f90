@@ -55,7 +55,7 @@ contains
 
       call xorshift_rnd_32(seed)
       scale = real(seed, real64) / max_value_xorshift32_real
-      rand = scale * (x_max - x_min + 1._real64) + x_min
+      rand = scale * (x_max - x_min) + x_min
 
    end function random_number_real64
 
