@@ -93,29 +93,49 @@ contains
 
    !> Based on algorithm A-ExpJ, described in [Weighted random sampling with a reservoir](10.1016/j.ipl.2005.11.003)
    !! and the [wiki section](https://en.wikipedia.org/wiki/Reservoir_sampling#Algorithm_A-Res)
-   subroutine reservoir_sampling_aexpj(weight, reservoir, epsilon)
-      real(real64), intent(in ) :: weight(:)    !< Weights for the population
-      real(real64), intent(out) :: reservoir(:) !< m randomly-sampled values from the population
-      real(real64), optional, intent(in ) :: epsilon !< Finite value to ensure all weights are > 0
+   subroutine reservoir_sampling_aexpj(weight, reservoir, seed_value)
+      real(real64),   intent(in )           :: weight(:)    !< Weights for the population
+      real(real64),   intent(out)           :: reservoir(:) !< m randomly-sampled values from the population
+      !real(real64),   intent(in ), optional :: epsilon      !< Finite value to ensure all weights are > 0
+      integer(int32), intent(in ), optional :: seed_value   !< Initial seed value for PRNG
 
-      integer(int32) :: m  !< Sample (reservoir) size
-      integer(int32) :: n  !< Population size
-      real(real64)   :: u_i, u_i2  !< Uniformly-distrubuted random numbers
-      real(real64)   :: Xw   !< Random variable
-      real(real64), allocatable :: key(:)   !< Key for each reservoir value
+      integer(int32) :: m                  !< Sample (reservoir) size
+      integer(int32) :: n                  !< Population size
+      real(real64)   :: u_i, u_i2          !< Uniformly-distrubuted random numbers
+      real(real64)   :: Xw                 !< Random variable
+      real(real64), allocatable :: key(:)  !< Key for each reservoir value
 
-      integer(int32) :: min_key_index, i, seed_size
+      integer(int32)              :: min_key_index, i, seed_size
       integer(int32), allocatable :: seed(:)
-      real(real64)   :: eps, thres_w
+      real(real64)                :: eps, thres_w
 
-      if (present(epsilon)) then
-         eps = epsilon
-      else
-         eps = 0._real64
-      endif 
+      ! Random number range must be (0, 1), as log(0) would result in a key of -inf, and log(1) = 0
+      ! Alternatively one could sample with intrinsic random_number and retry if it returns 0, however
+      ! this will definitely bias the distribution.
+      real(real64), parameter :: a = 1.e-10_real64
+      real(real64), parameter :: b = 1._real64 - 1.e-10_real64
 
       m = size(reservoir)
       n = size(weight)
+      ! assert(m >= n)
+
+      eps = 0._real64
+
+!      if (present(epsilon)) then
+!         eps = epsilon
+!      else
+!         eps = 0._real64
+!      endif
+!
+      ! Need a random integer seed to initialise the custom RNG
+      if (present(seed_value)) then
+          allocate(seed(1), source=seed_value)
+      else
+          call random_seed(size=seed_size)
+          allocate(seed(seed_size))
+          call random_seed(get=seed)
+      end if
+
       allocate(key(m))
 
       ! Initialise the reservoir with the first m items of the population
@@ -123,20 +143,13 @@ contains
       min_key_index = 1
       do i = 1, m
          reservoir(i) = i
-         ! TODO Needs to be replaced with my algorithm, such that 0 and 1 are not returned
-         ! log(0) would result in a key of -inf, and log(1) = 0
-         call random_number(u_i)  
+         u_i = random_number_real64(a, b, seed(1))
          key(i) = u_i ** (1._real64 / (weight(i) + eps))
          if (key(i) < key(min_key_index)) min_key_index = i
       enddo
 
-      call random_number(u_i)
+      u_i = random_number_real64(a, b, seed(1))
       Xw = log(u_i) / log(key(min_key_index))
-
-      ! Need a random integer seed to initialise the custom RNG
-      call random_seed(size=seed_size)
-      allocate(seed(seed_size))
-      call random_seed(get=seed)
 
       ! Perform swaps at jump-intervals, until the population is exhausted
       i = m + 1
@@ -144,12 +157,13 @@ contains
          Xw = Xw - weight(i)
          if (Xw <= 0._real64) then
             reservoir(min_key_index) = i
-            thres_w = key(min_key_index)**weight(i)  ! Definition inferred from the wiki snippet
-            u_i2 = random_number_real64(thres_w, 1._real64, seed(1))
+            thres_w = key(min_key_index)**weight(i)
+            ! U__{i2} \in (t_w, 1)
+            u_i2 = random_number_real64(thres_w + a, b, seed(1))
             key(i) = u_i2 ** (1._real64 / (weight(i) + eps))
             ! Question of whether I should do this before or after updating key(i)
-            min_key_index = find_min_key_index(key, m)
-            call random_number(u_i)
+            min_key_index = find_min_key_index(key)
+            u_i = random_number_real64(a, b, seed(1))
             Xw = log(u_i) / log(key(min_key_index))
          endif
          i = i + 1
@@ -158,15 +172,14 @@ contains
    end subroutine reservoir_sampling_aexpj
 
 
-   function find_min_key_index(key, m) result(key_index)
+   function find_min_key_index(key) result(key_index)
       real(real64),   intent(in) :: key(:)  !< Keys for each reservoir sample
-      integer(int32), intent(in) :: m       !< Sample size
       integer(int32)             :: key_index
 
       integer(int32)  :: i
 
       key_index = 1
-      do i = 2, m
+      do i = 2, size(key)
          if (key(i) < key(key_index)) key_index = i
       enddo
 
